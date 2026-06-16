@@ -1,0 +1,15 @@
+{
+  "default": {
+    "intro": {
+      "enabled": true,
+      "title": "Lindungi privasi Anda",
+      "body": "Aktifkan Mode Kalkulator agar aplikasi tampil sebagai Kalkulator di layar utama untuk menjaga privasi Anda.",
+      "primaryButton": "Ke Pengaturan",
+      "secondaryButton": "Nanti Saja"
+    },
+    "controls": {
+      "revertCalculatorMode": { "enabled": false, "version": 1 },
+      "revertAppearance": { "enabled": false, "version": 1 }
+    }
+  }
+}
