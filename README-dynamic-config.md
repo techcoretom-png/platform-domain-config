@@ -1,48 +1,64 @@
-# Calculator Config
+# Dynamic Config
 
-控制 App「計算機偽裝模式」相關行為的遠端設定檔。App 啟動時讀取本檔，可在**不發版**的情況下調整引導彈窗、或遠端關閉功能。
+App 的遠端設定檔，可在**不發版**的情況下調整部分功能行為。採「**一個檔、每功能一個 top-level key**」的信封結構，新增功能時只**新增 key**、不改既有結構（避免動到已上線版本的契約）。
 
-- 檔案：`calculator-config.json`
+- 檔案：`dynamic-config.json`
 - 讀取方：App（native 在啟動時抓取並快取，App 內各畫面再讀快取）
 - 生效時間：App **下次啟動**時讀取（已在 App 內使用中不會即時變更）
 - 注意：raw 檔案有 CDN 快取（約數分鐘），改動不會即時反映
 
 ---
 
-## 檔案結構
+## 頂層結構
 
 ```json
 {
-  "default": {
-    "intro": {
-      "enabled": true,
-      "title": "Lindungi privasi Anda",
-      "body": "Aktifkan Mode Kalkulator agar aplikasi tampil sebagai Kalkulator di layar utama untuk menjaga privasi Anda.",
-      "primaryButton": "Ke Pengaturan",
-      "secondaryButton": "Nanti Saja"
-    },
-    "controls": {
-      "revertCalculatorMode": { "enabled": false, "version": 1 },
-      "revertAppearance":     { "enabled": false, "version": 1 }
-    }
-  },
-  "platforms": {
-    "arpy": {
+  "calculator": { "...": "計算機模式相關設定（見下）" }
+}
+```
+
+- 每個功能一個 top-level key（目前只有 `calculator`）
+- 未來新增功能 → **加一個同層 key**（例如 `"featureX": {...}`）。舊版 App 只讀自己認得的 key、忽略未知 key，**純新增、不會破壞**
+- ⚠️ 已上線後，**不要更名 / 移除既有 top-level key 或改其內部結構**，否則舊版 App 會讀不到（只能用新增的方式演進）
+
+---
+
+## `calculator` 區塊
+
+```json
+{
+  "calculator": {
+    "default": {
+      "intro": {
+        "enabled": true,
+        "title": "Lindungi privasi Anda",
+        "body": "Aktifkan Mode Kalkulator agar aplikasi tampil sebagai Kalkulator di layar utama untuk menjaga privasi Anda.",
+        "primaryButton": "Ke Pengaturan",
+        "secondaryButton": "Nanti Saja"
+      },
       "controls": {
-        "revertCalculatorMode": { "enabled": true, "version": 2 }
+        "revertCalculatorMode": { "enabled": false, "version": 1 },
+        "revertAppearance":     { "enabled": false, "version": 1 }
+      }
+    },
+    "platforms": {
+      "arpy": {
+        "controls": {
+          "revertCalculatorMode": { "enabled": true, "version": 2 }
+        }
       }
     }
   }
 }
 ```
 
-### default vs platforms
+### default vs platforms（在 `calculator` 之內）
 
 - `default`：所有 platform 的基準設定
 - `platforms.<shortName>`：
-	- shortName使用全小寫
+	- **key 必須全小寫**：App 會把 device 的 shortName 轉小寫後直接比對；key 若有大寫將**匹配不到**而被忽略
 	- 個別 platform 的覆寫，只需填**要改的欄位**，其餘自動繼承 `default`
-- App 端會做 deep merge：`finalConfig = merge(default, platforms[shortName])`
+- App 端 deep merge：`finalConfig = merge(calculator.default, calculator.platforms[shortName.toLowerCase()])`
 - 不需要特別設定的 platform **不用**出現在 `platforms` 裡
 
 ---
@@ -104,19 +120,23 @@
 
 **① 對所有 platform 強制關閉計算機模式**
 ```json
-"default": {
-  "controls": {
-    "revertCalculatorMode": { "enabled": true, "version": 2 }   // 從現值 +1
+"calculator": {
+  "default": {
+    "controls": {
+      "revertCalculatorMode": { "enabled": true, "version": 2 }   // 從現值 +1
+    }
   }
 }
 ```
 
-**② 只對某個 platform 關閉**
+**② 只對某個 platform 關閉**（platform key 一律小寫）
 ```json
-"platforms": {
-  "ARPY": {
-    "controls": {
-      "revertCalculatorMode": { "enabled": true, "version": 2 }
+"calculator": {
+  "platforms": {
+    "arpy": {
+      "controls": {
+        "revertCalculatorMode": { "enabled": true, "version": 2 }
+      }
     }
   }
 }
@@ -124,15 +144,19 @@
 
 **③ 修改引導彈窗文案（即時，不需 version）**
 ```json
-"default": {
-  "intro": { "title": "新標題", "body": "新內文" }
+"calculator": {
+  "default": {
+    "intro": { "title": "新標題", "body": "新內文" }
+  }
 }
 ```
 
 **④ 關閉引導彈窗**
 ```json
-"default": {
-  "intro": { "enabled": false }
+"calculator": {
+  "default": {
+    "intro": { "enabled": false }
+  }
 }
 ```
 
@@ -145,4 +169,5 @@
 - `version` 一律用**整數**，要再觸發就 +1。請勿改成相同值或往回改。
 - `revertAppearance` 觸發後會顯示提示彈窗並**重啟 App**（換回正常 icon），屬正常行為。
 - App 取不到本檔（離線 / 失敗）時，使用上次成功讀取的設定；都沒有則使用內建預設，不影響既有功能。
+- 既有 top-level key 與其結構是**與已上線版本的契約**：只新增、不更名/不移除/不改結構。
 - 修改請走 PR / commit，方便追蹤誰在何時改了什麼。
