@@ -2,10 +2,15 @@
 
 App 的遠端設定檔，可在**不發版**的情況下調整部分功能行為。採「**一個檔、每功能一個 top-level key**」的信封結構，新增功能時只**新增 key**、不改既有結構（避免動到已上線版本的契約）。
 
-- 檔案：`dynamic-config.json`
+- **來源優先序**：**Firebase Remote Config 為主、本 GitHub 檔為 fallback**
+  - 主要：Firebase Console（shared project）的參數 **`dynamic_config`**，值放**整包**本檔內容（同一份 envelope JSON）
+  - 後備：本 `dynamic-config.json`（Firebase 取不到時才用）
+  - ⚠️ 兩邊內容請保持一致
 - 讀取方：App（native 在啟動時抓取並快取，App 內各畫面再讀快取）
 - 生效時間：App **下次啟動**時讀取（已在 App 內使用中不會即時變更）
-- 注意：raw 檔案有 CDN 快取（約數分鐘），改動不會即時反映
+- 注意：
+  - Firebase RC 客戶端節流 `minimumFetchInterval`：debug 0 / release 60s
+  - GitHub raw 有 CDN 快取（約數分鐘），改動不會即時反映
 
 ---
 
@@ -29,6 +34,10 @@ App 的遠端設定檔，可在**不發版**的情況下調整部分功能行為
 {
   "calculator": {
     "default": {
+      "availability": {
+        "calculatorMode": true,
+        "appAppearance": true
+      },
       "intro": {
         "enabled": true,
         "title": "Lindungi privasi Anda",
@@ -38,7 +47,7 @@ App 的遠端設定檔，可在**不發版**的情況下調整部分功能行為
       },
       "controls": {
         "revertCalculatorMode": { "enabled": false, "version": 1 },
-        "revertAppearance":     { "enabled": false, "version": 1 }
+        "revertAppearance":     { "enabled": false, "version": 1, "title": "", "body": "", "button": "" }
       }
     },
     "platforms": {
@@ -65,11 +74,24 @@ App 的遠端設定檔，可在**不發版**的情況下調整部分功能行為
 
 ## 欄位說明
 
+### `availability` — Settings 功能是否開放使用
+
+控制 Settings 頁的兩個開關**是否開放讓使用者開啟**（與 `controls` 的「強制關閉已開啟者」互補：`availability` 擋還沒開的人、`controls` 關已經開的人）。
+
+| 欄位 | 型別 | 說明 |
+|------|------|------|
+| `calculatorMode` | boolean | `true` → 開放使用者**新開**「Calculator Mode」|
+| `appAppearance` | boolean | `true` → 開放使用者**新開**「App Appearance」|
+
+- **預設不開放（fail-closed）**：只有**明確 `true`** 才開放；缺欄位 / config 抓不到 → **不開放**。⚠️ 代表 config 沒設或拿不到時，這兩個功能的開關**不會出現**——要上線就**必須**在 config 設 `true`。
+- **可關不可開**：未開放的功能，**已經開啟**的使用者該列**仍會顯示、可自行關閉**；**還沒開**的人看不到該列。使用者關閉後該列自動消失。
+- 即時性同其他 config（下次冷啟動 + CDN 快取），非即時。
+
 ### `intro` — 首次開啟引導彈窗（"Protect your privacy"）
 
 | 欄位 | 型別 | 說明 |
 |------|------|------|
-| `enabled` | boolean | 是否顯示引導彈窗 |
+| `enabled` | boolean | 是否顯示引導彈窗（**需明確為 `true` 才顯示**；缺此欄位或 `false` 皆不顯示）|
 | `title` | string | 標題文字 |
 | `body` | string | 內文說明 |
 | `primaryButton` | string | 主按鈕文字（前往設定）|
@@ -93,6 +115,14 @@ App 的遠端設定檔，可在**不發版**的情況下調整部分功能行為
 |------|------|------|
 | `enabled` | boolean | 是否啟用此強制動作 |
 | `version` | integer | 指令版本號，用來控制「再觸發一次」（見下）|
+
+`revertAppearance` 另支援**可遠端設定的彈窗文案**（同 `intro`，省略 / 空字串 → 用內建多語系）：
+
+| 欄位 | 型別 | 說明 |
+|------|------|------|
+| `title` | string | 還原外觀彈窗標題 |
+| `body` | string | 還原外觀彈窗內文 |
+| `button` | string | 確認按鈕文字 |
 
 ---
 
@@ -161,6 +191,28 @@ App 的遠端設定檔，可在**不發版**的情況下調整部分功能行為
 ```
 
 **⑤ 同一個指令想再強制一次** → 把對應 `version` 加 1。
+
+**⑥ 開放使用者新開某功能**（預設不開放，**必須**設 `true` 才會出現開關）
+```json
+"calculator": {
+  "default": {
+    "availability": { "calculatorMode": true, "appAppearance": true }
+  }
+}
+```
+> 要收回（不再開放新開）→ 改回 `false` 或移除；已開啟者仍可自行關閉。
+
+**⑦ 自訂「還原外觀」彈窗文案（不發版改字）**
+```json
+"calculator": {
+  "default": {
+    "controls": {
+      "revertAppearance": { "title": "新標題", "body": "新內文", "button": "OK" }
+    }
+  }
+}
+```
+> 留空 / 省略 `title`/`body`/`button` → 用 App 內建多語系字串。
 
 ---
 

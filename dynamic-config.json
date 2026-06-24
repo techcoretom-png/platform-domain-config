@@ -1,6 +1,10 @@
 {
   "calculator": {
     "default": {
+      "availability": {
+        "calculatorMode": true,
+        "appAppearance": true
+      },
       "intro": {
         "enabled": true,
         "title": "Lindungi privasi Anda",
@@ -10,7 +14,13 @@
       },
       "controls": {
         "revertCalculatorMode": { "enabled": false, "version": 1 },
-        "revertAppearance": { "enabled": false, "version": 1 }
+        "revertAppearance": {
+          "enabled": false,
+          "version": 1,
+          "title": "Feature Update",
+          "body": "The Calculator Appearance feature is currently unavailable. Your app icon and name have been restored to default.",
+          "button": "OK"
+        }
       }
     }
   }
