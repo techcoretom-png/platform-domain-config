@@ -1,0 +1,20 @@
+{
+  "calculator": {
+    "default": {
+      "availability": {
+        "calculatorMode": true,
+        "appAppearance": true
+      },
+      "intro": {
+        "enabled": true
+      },
+      "controls": {
+        "revertCalculatorMode": { "enabled": false, "version": 1 },
+        "revertAppearance": {
+          "enabled": false,
+          "version": 1
+        }
+      }
+    }
+  }
+}
