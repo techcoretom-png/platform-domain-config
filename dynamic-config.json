@@ -6,20 +6,13 @@
         "appAppearance": true
       },
       "intro": {
-        "enabled": true,
-        "title": "Lindungi privasi Anda",
-        "body": "Aktifkan Mode Kalkulator agar aplikasi tampil sebagai Kalkulator di layar utama untuk menjaga privasi Anda.",
-        "primaryButton": "Ke Pengaturan",
-        "secondaryButton": "Nanti Saja"
+        "enabled": true
       },
       "controls": {
         "revertCalculatorMode": { "enabled": false, "version": 1 },
         "revertAppearance": {
           "enabled": false,
-          "version": 1,
-          "title": "Feature Update",
-          "body": "The Calculator Appearance feature is currently unavailable. Your app icon and name have been restored to default.",
-          "button": "OK"
+          "version": 1
         }
       }
     }
